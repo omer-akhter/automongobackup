@@ -263,7 +263,7 @@ OPT=""                                            # OPT string for use with mong
 
 # Do we need to use a username/password?
 if [ "$DBUSERNAME" ]; then
-    OPT="$OPT --username=$DBUSERNAME --password=$DBPASSWORD --authenticationDatabase=$DBAUTHDB"
+    OPT="$OPT --username $DBUSERNAME --password $DBPASSWORD --authenticationDatabase $DBAUTHDB"
 fi
 
 # Do we use oplog for point-in-time snapshotting?
@@ -304,7 +304,7 @@ exec 2> $LOGERR     # stderr replaced with file $LOGERR.
 
 # Database dump function
 dbdump () {
-    mongodump --host=$DBHOST:$DBPORT --out=$1 $OPT
+    mongodump --host $DBHOST:$DBPORT --out $1 $OPT
     [ -e "$1" ] && return 0
     echo "ERROR: mongodump failed to create dumpfile: $1" >&2
     return 1
