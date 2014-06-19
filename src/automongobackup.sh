@@ -40,6 +40,9 @@
 # Unnecessary if authentication is off
 # DBAUTHDB=""
 
+# Prefix to prepend to the backup file name
+FILEPREFIX=""
+
 # Host name (or IP address) of mongo server e.g localhost
 DBHOST="127.0.0.1"
 
@@ -275,7 +278,6 @@ fi
 mkdir -p $BACKUPDIR/{daily,weekly,monthly} || shellout 'failed to create directories'
 
 if [ "$LATEST" = "yes" ]; then
-    rm -rf "$BACKUPDIR/latest"
     mkdir -p "$BACKUPDIR/latest" || shellout 'failed to create directory'
 fi
 
@@ -363,6 +365,8 @@ compression () {
     fi
 
     if [ "$LATEST" = "yes" ]; then
+		# only remove this prefix
+		rm -f $BACKUPDIR/latest/${FILEPREFIX}*
         if [ "$LATESTLINK" = "yes" ];then
             COPY="ln"
         else
@@ -430,7 +434,7 @@ echo ======================================================================
 # Monthly Full Backup of all Databases
 if [ $DOM = "01" ]; then
     echo Monthly Full Backup
-    FILE="$BACKUPDIR/monthly/$DATE.$M"
+    FILE="$BACKUPDIR/monthly/${FILEPREFIX}$M.$DATE"
 
 # Weekly Backup
 elif [ $DNOW = $DOWEEKLY ]; then
@@ -444,18 +448,18 @@ elif [ $DNOW = $DOWEEKLY ]; then
     else
         REMW=`expr $W - 5`
     fi
-    rm -f $BACKUPDIR/weekly/week.$REMW.*
+    rm -f $BACKUPDIR/weekly/${FILEPREFIX}$REMW.*
     echo
-    FILE="$BACKUPDIR/weekly/week.$W.$DATE"
+    FILE="$BACKUPDIR/weekly/${FILEPREFIX}$W.$DATE"
 
 # Daily Backup
 else
     echo Daily Backup of Databases
     echo Rotating last weeks Backup...
     echo
-    rm -f $BACKUPDIR/daily/*.$DOW.*
+    rm -f $BACKUPDIR/daily/${FILEPREFIX}$DOW.*
     echo
-    FILE="$BACKUPDIR/daily/$DATE.$DOW"
+    FILE="$BACKUPDIR/daily/${FILEPREFIX}$DOW.$DATE"
 fi
 dbdump $FILE && compression $FILE
 echo ----------------------------------------------------------------------
