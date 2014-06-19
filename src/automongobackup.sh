@@ -45,6 +45,10 @@
 # Note that this option can not be used with OPLOG="yes"
 # DBNAME=
 
+# Specifies a collection to backup. If you do not specify a collection,
+# this option copies all collections in the specified database or instance
+# COLNAME=
+
 # Prefix to prepend to the backup file name
 FILEPREFIX=""
 
@@ -278,6 +282,11 @@ fi
 if [ "$DBNAME" ]; then
 	OPT="$OPT --db $DBNAME"
 	FILEPREFIX="$FILEPREFIX$DBNAME-"
+	# Do we want one or all collections?
+	if [ "$COLNAME" ]; then
+		OPT="$OPT --collection  $COLNAME"
+		FILEPREFIX="$FILEPREFIX$COLNAME-"
+	fi
 else
 	# Do we use oplog for point-in-time snapshotting of all databases?
 	# Can not be used for single-database dumps
