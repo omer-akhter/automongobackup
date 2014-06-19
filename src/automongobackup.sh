@@ -40,6 +40,11 @@
 # Unnecessary if authentication is off
 # DBAUTHDB=""
 
+# Specifies a database to backup. If you do not specify a database, 
+# mongodump copies all databases in this instance into the dump files
+# Note that this option can not be used with OPLOG="yes"
+# DBNAME=
+
 # Prefix to prepend to the backup file name
 FILEPREFIX=""
 
@@ -101,7 +106,7 @@ REPLICAONSLAVE="yes"
 # Options documentation
 #=====================================================================
 # Set DBUSERNAME and DBPASSWORD of a user that has at least SELECT permission
-# to ALL databases.
+# to ALL databases. Alternatively set DBNAME and provide credentials to that DB
 #
 # Set the DBHOST option to the server you wish to backup, leave the
 # default to backup "this server".(to backup multiple servers make
@@ -269,9 +274,16 @@ if [ "$DBUSERNAME" ]; then
     OPT="$OPT --username $DBUSERNAME --password $DBPASSWORD --authenticationDatabase $DBAUTHDB"
 fi
 
-# Do we use oplog for point-in-time snapshotting?
-if [ "$OPLOG" = "yes" ]; then
-    OPT="$OPT --oplog"
+# Do we want one or all databases?
+if [ "$DBNAME" ]; then
+	OPT="$OPT --db $DBNAME"
+	FILEPREFIX="$FILEPREFIX$DBNAME-"
+else
+	# Do we use oplog for point-in-time snapshotting of all databases?
+	# Can not be used for single-database dumps
+	if [ "$OPLOG" = "yes"  ]; then
+		OPT="$OPT --oplog"
+	fi
 fi
 
 # Create required directories
