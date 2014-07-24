@@ -59,7 +59,7 @@ DBHOST="127.0.0.1"
 DBPORT="27017"
 
 # Backup directory location e.g /backups
-BACKUPDIR="/var/backups/mongodb"
+BACKUPDIR="/data/backup"
 
 # Mail setup
 # What would you like to be mailed to you?
@@ -82,8 +82,8 @@ MAXATTSIZE="4000"
 # Which day do you want weekly backups? (1 to 7 where 1 is Monday)
 DOWEEKLY=6
 
-# Choose Compression type. (gzip or bzip2)
-COMP="gzip"
+# Choose Compression type. (7z, gzip or bzip2)
+COMP="7z"
 
 # Choose if the uncompressed folder should be deleted after compression has completed
 CLEANUP="yes"
@@ -95,7 +95,7 @@ LATEST="yes"
 LATESTLINK="yes"
 
 # Use oplog for point-in-time snapshotting.
-OPLOG="yes"
+OPLOG="no"
 
 # Choose other Server if is Replica-Set Master
 REPLICAONSLAVE="yes"
@@ -188,6 +188,11 @@ REPLICAONSLAVE="yes"
 #=====================================================================
 # Change Log
 #=====================================================================
+# VER 0.9.2 - (2014-xx-xx) (author: Alex Bevilacqua)
+#	- Added 7zip compression option
+# VER 0.9.1 - (2014-xx-xx) (author: Xisco Guaita)
+#       - Added individual database backup
+#       - Added individual collection backup
 # VER 0.9 - (2011-10-28) (author: Joshua Keroes)
 #       - Fixed bugs and improved logic in select_secondary_member()
 #       - Fixed minor grammar issues and formatting in docs
@@ -280,19 +285,19 @@ fi
 
 # Do we want one or all databases?
 if [ "$DBNAME" ]; then
-	OPT="$OPT --db $DBNAME"
-	FILEPREFIX="$FILEPREFIX$DBNAME-"
-	# Do we want one or all collections?
-	if [ "$COLNAME" ]; then
-		OPT="$OPT --collection  $COLNAME"
-		FILEPREFIX="$FILEPREFIX$COLNAME-"
-	fi
+  OPT="$OPT --db $DBNAME"
+  FILEPREFIX="$FILEPREFIX$DBNAME-"
+  # Do we want one or all collections?
+  if [ "$COLNAME" ]; then
+    OPT="$OPT --collection  $COLNAME"
+    FILEPREFIX="$FILEPREFIX$COLNAME-"
+  fi
 else
-	# Do we use oplog for point-in-time snapshotting of all databases?
-	# Can not be used for single-database dumps
-	if [ "$OPLOG" = "yes"  ]; then
-		OPT="$OPT --oplog"
-	fi
+  # Do we use oplog for point-in-time snapshotting of all databases?
+  # Can not be used for single-database dumps
+  if [ "$OPLOG" = "yes"  ]; then
+    OPT="$OPT --oplog"
+  fi
 fi
 
 # Create required directories
@@ -376,18 +381,25 @@ compression () {
     dir=$(dirname $1)
     file=$(basename $1)
     if [ -n "$COMP" ]; then
-        [ "$COMP" = "gzip" ] && SUFFIX=".tgz"
-        [ "$COMP" = "bzip2" ] && SUFFIX=".tar.bz2"
-        echo Tar and $COMP to "$file$SUFFIX"
-        cd "$dir" && tar -cf - "$file" | $COMP -c > "$file$SUFFIX"
+        if [ "$COMP" = "7z" ]; then
+            # TODO check that 7zip is available
+            #   ex: command -v 7z > /dev/null 2>&1 || { echo >&2 "7-Zip missing (SKIPPING_COMPRESSION)";  }
+            echo 7-zipping to "$file.7z"
+            cd "$dir" && 7z a "$file.7z" *
+        else
+            [ "$COMP" = "gzip" ] && SUFFIX=".tgz"
+            [ "$COMP" = "bzip2" ] && SUFFIX=".tar.bz2"
+            echo Tar and $COMP to "$file$SUFFIX"
+            cd "$dir" && tar -cf - "$file" | $COMP -c > "$file$SUFFIX"            
+        fi
         cd - >/dev/null || return 1
     else
         echo "No compression option set, check advanced settings"
     fi
 
     if [ "$LATEST" = "yes" ]; then
-		# only remove this prefix
-		rm -f $BACKUPDIR/latest/${FILEPREFIX}*
+    # only remove this prefix
+    rm -f $BACKUPDIR/latest/${FILEPREFIX}*
         if [ "$LATESTLINK" = "yes" ];then
             COPY="ln"
         else
