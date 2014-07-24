@@ -1,8 +1,9 @@
 #!/bin/bash
 #
 # MongoDB Backup Script
-# VER. 0.9
-# More Info: http://github.com/micahwedemeyer/automongobackup
+# VER. 0.9.2
+# More Info: http://github.com/dacgrouplabs/automongobackup
+#   original source: http://github.com/micahwedemeyer/automongobackup
 
 # Note, this is a lobotomized port of AutoMySQLBackup
 # (http://sourceforge.net/projects/automysqlbackup/) for use with
