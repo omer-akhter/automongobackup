@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # MongoDB Backup Script
-# VER. 0.9.2
-# More Info: http://github.com/dacgrouplabs/automongobackup
-#   original source: http://github.com/micahwedemeyer/automongobackup
+# VER. 0.9.3
+# More Info: https://github.com/omer-akhter/automongobackup
+#   original source: http://github.com/dacgrouplabs/automongobackup
 
 # Note, this is a lobotomized port of AutoMySQLBackup
 # (http://sourceforge.net/projects/automysqlbackup/) for use with
@@ -83,7 +83,7 @@ MAXATTSIZE="4000"
 # Which day do you want weekly backups? (1 to 7 where 1 is Monday)
 DOWEEKLY=6
 
-# Choose Compression type. (7z, gzip or bzip2)
+# Choose Compression type. (7z, gzip, bzip2 or xz)
 COMP="7z"
 
 # Choose if the uncompressed folder should be deleted after compression has completed
@@ -189,6 +189,8 @@ REPLICAONSLAVE="yes"
 #=====================================================================
 # Change Log
 #=====================================================================
+# VER 0.9.3 - (2014-12-24) (author: Omer Akhter)
+#   - Added xz compression option
 # VER 0.9.2 - (2014-xx-xx) (author: Alex Bevilacqua)
 #	- Added 7zip compression option
 # VER 0.9.1 - (2014-xx-xx) (author: Xisco Guaita)
@@ -273,7 +275,7 @@ DNOW=`date +%u`                                   # Day number of the week 1 to 
 DOM=`date +%d`                                    # Date of the Month e.g. 27
 M=`date +%B`                                      # Month e.g January
 W=`date +%V`                                      # Week Number e.g 37
-VER=0.9.2                                         # Version Number
+VER=0.9.3                                         # Version Number
 LOGFILE=$BACKUPDIR/$DBHOST-`date +%H%M`.log       # Logfile Name
 LOGERR=$BACKUPDIR/ERRORS_$DBHOST-`date +%H%M`.log # Logfile Name
 BACKUPFILES=""
@@ -305,6 +307,7 @@ fi
 mkdir -p $BACKUPDIR/{daily,weekly,monthly} || shellout 'failed to create directories'
 
 if [ "$LATEST" = "yes" ]; then
+    #rm -rf "$BACKUPDIR/latest"
     mkdir -p "$BACKUPDIR/latest" || shellout 'failed to create directory'
 fi
 
@@ -333,6 +336,7 @@ exec 2> $LOGERR     # stderr replaced with file $LOGERR.
 
 # Database dump function
 dbdump () {
+    #echo mongodump --host $DBHOST:$DBPORT --out $1 $OPT
     mongodump --host $DBHOST:$DBPORT --out $1 $OPT
     [ -e "$1" ] && return 0
     echo "ERROR: mongodump failed to create dumpfile: $1" >&2
@@ -390,6 +394,7 @@ compression () {
         else
             [ "$COMP" = "gzip" ] && SUFFIX=".tgz"
             [ "$COMP" = "bzip2" ] && SUFFIX=".tar.bz2"
+            [ "$COMP" = "xz" ] && SUFFIX=".tar.xz"
             echo Tar and $COMP to "$file$SUFFIX"
             cd "$dir" && tar -cf - "$file" | $COMP -c > "$file$SUFFIX"            
         fi

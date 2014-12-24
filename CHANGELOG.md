@@ -1,3 +1,5 @@
+* VER 0.9.3 - (2014-12-24) (author: Omer Akhter)
+  * Added xz compression option
 * VER 0.9.2 - (2014-xx-xx) (author: Alex Bevilacqua)
   * Added 7zip compression option
 * VER 0.9.1 - (2014-xx-xx) (author: Xisco Guaita)
