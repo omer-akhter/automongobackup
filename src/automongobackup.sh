@@ -41,7 +41,7 @@
 # Unnecessary if authentication is off
 # DBAUTHDB=""
 
-# Specifies a database to backup. If you do not specify a database, 
+# Specifies a database to backup. If you do not specify a database,
 # mongodump copies all databases in this instance into the dump files
 # Note that this option can not be used with OPLOG="yes"
 # DBNAME=
@@ -106,6 +106,15 @@ REPLICAONSLAVE="yes"
 
 # Command run after backups (uncomment to use)
 # POSTBACKUP=""
+
+# Should the log files be deleted
+#CLEANUP_LOG = "yes"
+
+# Should the error log files be deleted
+#CLEANUP_ERR = "yes"
+
+# Log to single file
+SINGLE_LOG = "yes"
 
 #=====================================================================
 # Options documentation
@@ -191,6 +200,8 @@ REPLICAONSLAVE="yes"
 #=====================================================================
 # VER 0.9.3 - (2014-12-24) (author: Omer Akhter)
 #   - Added xz compression option
+#   - Added option to log to single file
+#   - Added option to keep logs
 # VER 0.9.2 - (2014-xx-xx) (author: Alex Bevilacqua)
 #	- Added 7zip compression option
 # VER 0.9.1 - (2014-xx-xx) (author: Xisco Guaita)
@@ -276,8 +287,12 @@ DOM=`date +%d`                                    # Date of the Month e.g. 27
 M=`date +%B`                                      # Month e.g January
 W=`date +%V`                                      # Week Number e.g 37
 VER=0.9.3                                         # Version Number
-LOGFILE=$BACKUPDIR/$DBHOST-`date +%H%M`.log       # Logfile Name
-LOGERR=$BACKUPDIR/ERRORS_$DBHOST-`date +%H%M`.log # Logfile Name
+
+LOGFILE_PREFIX=$BACKUPDIR/$DBHOST.log
+LOGERR_PREFIX=$BACKUPDIR/ERRORS_$DBHOST.log
+LOGFILE=$LOGFILE_PREFIX-`date +%H%M`.log          # Logfile Name
+LOGERR=$LOGERR_PREFIX-`date +%H%M`.log            # Errologfile Name
+
 BACKUPFILES=""
 OPT=""                                            # OPT string for use with mongodump
 
@@ -396,7 +411,7 @@ compression () {
             [ "$COMP" = "bzip2" ] && SUFFIX=".tar.bz2"
             [ "$COMP" = "xz" ] && SUFFIX=".tar.xz"
             echo Tar and $COMP to "$file$SUFFIX"
-            cd "$dir" && tar -cf - "$file" | $COMP -c > "$file$SUFFIX"            
+            cd "$dir" && tar -cf - "$file" | $COMP -c > "$file$SUFFIX"
         fi
         cd - >/dev/null || return 1
     else
@@ -555,6 +570,31 @@ if [ -s "$LOGERR" ]; then
 fi
 
 # Clean up Logfile
-rm -f "$LOGFILE" "$LOGERR"
+if [ "x${SINGLE_LOG}" == "xyes"]; then
+	if [ "x${CLEANUP_LOG}" == "xyes" ]; then
+		[ -f "$LOGFILE_PREFIX" ] && rm -fv "$LOGFILE_PREFIX"
+	else
+		echo >> "$LOGFILE_PREFIX"
+		echo "#####################" >> "$LOGFILE_PREFIX"
+		echo "# $DATE #" >> "$LOGFILE_PREFIX"
+		echo "#####################" >> "$LOGFILE_PREFIX"
+		cat "$LOGFILE" >> "$LOGFILE_PREFIX"
+	fi
+	rm -fv "$LOGFILE"
+
+	if [ "x${CLEANUP_ERR}" == "xyes" ]; then
+		[ -f "$LOGERR_PREFIX" ] && rm -fv "$LOGERR_PREFIX"
+	else
+		echo >> "$LOGERR_PREFIX"
+		echo "#####################" >> "$LOGERR_PREFIX"
+		echo "# $DATE #" >> "$LOGERR_PREFIX"
+		echo "#####################" >> "$LOGERR_PREFIX"
+		cat "$LOGERR" >> "$LOGERR_PREFIX"
+	fi
+	rm -fv "$LOGERR"
+else
+	[ "x${CLEANUP_LOG}" == "xyes" ] && [ -f "$LOGFILE" ] && rm -fv "$LOGFILE"
+	[ "x${CLEANUP_ERR}" == "xyes" ] && [ -f "$LOGERR" ] && rm -fv "$LOGERR"
+fi
 
 exit $STATUS
