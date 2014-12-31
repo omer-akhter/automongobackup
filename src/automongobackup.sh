@@ -108,13 +108,13 @@ REPLICAONSLAVE="yes"
 # POSTBACKUP=""
 
 # Should the log files be deleted
-#CLEANUP_LOG = "yes"
+#CLEANUP_LOG="yes"
 
 # Should the error log files be deleted
-#CLEANUP_ERR = "yes"
+#CLEANUP_ERR="yes"
 
 # Log to single file
-SINGLE_LOG = "yes"
+SINGLE_LOG="yes"
 
 #=====================================================================
 # Options documentation
